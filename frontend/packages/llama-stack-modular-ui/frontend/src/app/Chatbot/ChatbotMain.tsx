@@ -22,7 +22,7 @@ import {
   MessageBox,
 } from '@patternfly/chatbot';
 
-import useFetchLlamaModels from '~/app/hooks/useFetchLlamaModels';
+import useFetchLlamaModels from '../hooks/useFetchLlamaModels';
 import '@patternfly/chatbot/dist/css/main.css';
 import { ChatbotSourceSettingsModal } from './sourceUpload/ChatbotSourceSettingsModal';
 import { ChatbotMessages } from './ChatbotMessagesList';

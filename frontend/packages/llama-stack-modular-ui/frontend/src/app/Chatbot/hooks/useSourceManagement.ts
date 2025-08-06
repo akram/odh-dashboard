@@ -1,9 +1,9 @@
 /* eslint-disable camelcase */
 import * as React from 'react';
 import { DropEvent } from '@patternfly/react-core';
-import { extractTextFromFile } from '~/app/utilities/extractPdfText';
-import { uploadSource } from '~/app/services/llamaStackService';
-import { ChatbotSourceSettings } from '~/app/types';
+import { extractTextFromFile } from '../../utilities/extractPdfText';
+import { uploadSource } from '../../services/llamaStackService';
+import { ChatbotSourceSettings } from '../../types';
 
 export interface UseSourceManagementReturn {
   selectedSource: File[];

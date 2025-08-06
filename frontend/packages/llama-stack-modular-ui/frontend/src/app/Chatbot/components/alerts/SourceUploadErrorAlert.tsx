@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Alert, AlertActionCloseButton } from '@patternfly/react-core';
-import { ALERT_TIMEOUT_MS } from '~/app/Chatbot/const';
+import { ALERT_TIMEOUT_MS } from '../../const';
 
 interface SourceUploadErrorAlertProps {
   isVisible: boolean;

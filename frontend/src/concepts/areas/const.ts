@@ -15,7 +15,7 @@ export const techPreviewFlags = {
 export const devTemporaryFeatureFlags = {
   disableKueue: true,
   disableFeatureStore: true,
-  disableLlamaStackChatBot: true, // internal dev only
+  disableLlamaStackChatBot: false, // internal dev only
   disableProjectScoped: true,
 } satisfies Partial<DashboardCommonConfig>;
 

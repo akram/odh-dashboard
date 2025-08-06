@@ -1,17 +1,17 @@
 /* eslint-disable camelcase */
 import * as React from 'react';
 import { MessageProps } from '@patternfly/chatbot';
-import userAvatar from '~/app/bgimages/user_avatar.svg';
-import botAvatar from '~/app/bgimages/bot_avatar.svg';
-import { getId } from '~/app/utilities/utils';
-import { querySource } from '~/app/services/llamaStackService';
-import { ChatbotSourceSettings, Query } from '~/app/types';
+import userAvatar from '../../bgimages/user_avatar.svg';
+import botAvatar from '../../bgimages/bot_avatar.svg';
+import { getId } from '../../utilities/utils';
+import { querySource } from '../../services/llamaStackService';
+import { ChatbotSourceSettings, Query } from '../../types';
 import {
   QUERY_CONFIG,
   SAMPLING_STRATEGY,
   ERROR_MESSAGES,
   initialBotMessage,
-} from '~/app/Chatbot/const';
+} from '../const';
 
 export interface UseChatbotMessagesReturn {
   messages: MessageProps[];

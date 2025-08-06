@@ -1,6 +1,6 @@
 import { MessageProps } from '@patternfly/chatbot';
-import botAvatar from '~/app/bgimages/bot_avatar.svg';
-import { getId } from '~/app/utilities/utils';
+import botAvatar from '../bgimages/bot_avatar.svg';
+import { getId } from '../utilities/utils';
 
 // Alert and notification constants
 export const ALERT_TIMEOUT_MS = 4000;

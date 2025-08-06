@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { DEFAULT_EXPANDED_ACCORDION_ITEMS } from '~/app/Chatbot/const';
+import { DEFAULT_EXPANDED_ACCORDION_ITEMS } from '../const';
 
 export interface UseAccordionStateReturn {
   expandedAccordionItems: string[];

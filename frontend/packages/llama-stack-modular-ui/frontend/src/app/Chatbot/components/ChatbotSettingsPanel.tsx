@@ -11,11 +11,11 @@ import {
   Divider,
   Title,
 } from '@patternfly/react-core';
-import { ChatbotSourceUploadPanel } from '~/app/Chatbot/sourceUpload/ChatbotSourceUploadPanel';
-import { ACCORDION_ITEMS } from '~/app/Chatbot/const';
-import { UseAccordionStateReturn } from '~/app/Chatbot/hooks/useAccordionState';
-import { UseSystemInstructionsReturn } from '~/app/Chatbot/hooks/useSystemInstructions';
-import { UseSourceManagementReturn } from '~/app/Chatbot/hooks/useSourceManagement';
+import { ChatbotSourceUploadPanel } from '../sourceUpload/ChatbotSourceUploadPanel';
+import { ACCORDION_ITEMS } from '../const';
+import { UseAccordionStateReturn } from '../hooks/useAccordionState';
+import { UseSystemInstructionsReturn } from '../hooks/useSystemInstructions';
+import { UseSourceManagementReturn } from '../hooks/useSourceManagement';
 import { ModelSelectFormGroup } from './ModelSelectFormGroup';
 import { SystemInstructionsFormGroup } from './SystemInstructionsFormGroup';
 
