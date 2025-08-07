@@ -17,7 +17,7 @@ import axios from '../utilities/axios';
  * @throws Error - When the API request fails or returns an error response
  */
 export const getModels = (): Promise<LlamaModel[]> => {
-  const url = '/api/v1/models';
+  const url = '/models';
   return axios
     .get(url)
     .then((response) => response.data.data.items)
@@ -33,7 +33,7 @@ export const getModels = (): Promise<LlamaModel[]> => {
  * @throws Error - When the API request fails or returns an error response
  */
 export const getModelsByType = (modelType: LlamaModelType): Promise<LlamaModel[]> => {
-  const url = `/api/v1/models?model_type=${modelType}`;
+  const url = `/models?model_type=${modelType}`;
   return axios
     .get(url)
     .then((response) => response.data.data.items)
@@ -48,7 +48,7 @@ export const getModelsByType = (modelType: LlamaModelType): Promise<LlamaModel[]
  * @throws Error - When the API request fails or returns an error response
  */
 export const getVectorDBs = (): Promise<VectorDB[]> => {
-  const url = '/api/v1/vector-dbs';
+  const url = '/vector-dbs';
   return axios
     .get(url)
     .then((response) => response.data.data.items)
@@ -64,7 +64,7 @@ export const getVectorDBs = (): Promise<VectorDB[]> => {
  * @throws Error - When the API request fails or returns an error response
  */
 export const registerVectorDB = (vectorDB: VectorDB): Promise<void> => {
-  const url = '/api/v1/vector-dbs';
+  const url = '/vector-dbs';
   return axios
     .post(url, vectorDB)
     .then((response) => response.data)
@@ -81,7 +81,7 @@ export const registerVectorDB = (vectorDB: VectorDB): Promise<void> => {
  * @throws Error - When the API request fails or returns an error response
  */
 export const uploadSource = (source: Source, settings: ChatbotSourceSettings): Promise<void> => {
-  const url = '/api/v1/upload';
+  const url = '/upload';
   const payload = {
     documents: source.documents,
     vector_db_id: settings.vectorDB,
@@ -104,7 +104,7 @@ export const uploadSource = (source: Source, settings: ChatbotSourceSettings): P
  * @throws Error - When the API request fails or returns an error response
  */
 export const querySource = (query: Query): Promise<QueryResponse> => {
-  const url = '/api/v1/query';
+  const url = '/query';
   return axios
     .post(url, query)
     .then((response) => response.data)

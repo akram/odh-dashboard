@@ -31,7 +31,7 @@ This project is a web application built with a modular architecture. It consists
 
 ## Development Setup
 
-### Frontend
+### Frontend Development
 
 ```bash
 # Navigate to the frontend directory
@@ -40,9 +40,11 @@ cd frontend
 # Install dependencies
 npm ci
 
-# Start development server
+# Start development server (for frontend-only development)
 npm run start:dev
 ```
+
+> **Note:** For full application development with backend integration, see the "Running Locally for Development" section below.
 
 ### Backend (BFF)
 
@@ -88,9 +90,6 @@ make run PORT=9000
 # Run with custom log level
 make run LOG_LEVEL=info
 
-# Run with custom static assets directory
-make run STATIC_ASSETS_DIR=../frontend/dist
-
 # Run with custom CORS allowed origins
 make run ALLOWED_ORIGINS="http://localhost:3000,http://localhost:8080"
 ```
@@ -103,6 +102,39 @@ In order for easy development it is possible to run the BFF in such a way that i
 # Run the BFF with mock llama stack client
 make run MOCK_LS_CLIENT=true
 ```
+
+## Building the Frontend
+
+To run the full application locally, you need to build the frontend to generate the static assets:
+
+```bash
+# Navigate to the frontend directory
+cd frontend
+
+# Build the frontend for production
+npm run build
+```
+
+This will create a `dist` directory containing the compiled frontend assets that the BFF will serve.
+
+> **Prerequisites:** Make sure you have already installed dependencies with `npm ci` (see Frontend Development section above).
+
+## Running Locally for Development
+
+For local development with full frontend integration, you can run the BFF with the following configuration:
+
+```bash
+make run STATIC_ASSETS_DIR=../frontend/dist MOCK_LS_CLIENT=true ALLOWED_ORIGINS="*" AUTH_METHOD=disabled API_PATH_PREFIX=/api/v1
+```
+
+This command:
+- **`STATIC_ASSETS_DIR=../frontend/dist`**: Serves the frontend build from the correct location
+- **`MOCK_LS_CLIENT=true`**: Uses mock data instead of connecting to a real Llama Stack service
+- **`ALLOWED_ORIGINS="*"`**: Allows CORS requests from any origin (useful for development)
+- **`AUTH_METHOD=disabled`**: Disables authentication for easier local development
+- **`API_PATH_PREFIX=/api/v1`**: Sets the API path prefix (defaults to `/rag/api/v1` if not specified)
+
+> **Prerequisites:** Complete the "Building the Frontend" step above before running this command.
 
 ## Building and Running with Docker
 

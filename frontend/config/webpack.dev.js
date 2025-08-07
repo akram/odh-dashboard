@@ -101,7 +101,7 @@ module.exports = smp.wrap(
 
             return [
               {
-                context: ['/api', '/_mf', ...mfProxies],
+                context: ['/api', '/_mf', '/rag', ...mfProxies],
                 target: `https://${dashboardHost}`,
                 secure: false,
                 changeOrigin: true,
@@ -119,7 +119,7 @@ module.exports = smp.wrap(
           }
           return [
             {
-              context: ['/api', '/_mf', ...mfProxies],
+              context: ['/api', '/_mf', '/rag', ...mfProxies],
               target: `http://0.0.0.0:${BACKEND_PORT}`,
             },
             {
