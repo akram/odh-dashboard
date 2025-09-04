@@ -20,4 +20,5 @@ const (
 	CodeExporterPath                 = ApiPathPrefix + "/code-exporter"
 	NamespacesPath                   = ApiPathPrefix + "/namespaces"
 	LlamaStackDistributionStatusPath = ApiPathPrefix + "/llamastack-distribution/status"
+	MCPPath                          = ApiPathPrefix + "/mcp/:namespace/:service"
 )

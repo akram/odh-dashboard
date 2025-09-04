@@ -8,6 +8,7 @@ info:
     url: "https://www.apache.org/licenses/LICENSE-2.0"
 servers:
   - url: "http://localhost:8080"
+  - url: "http://localhost:8080/genai"
 
 # Global security requirement - all endpoints require Bearer token by default
 security:
@@ -272,6 +273,142 @@ paths:
       operationId: getLlamaStackDistributionStatus
       summary: Get LSD Status
       description: Gets the status of LlamaStack Distribution in the specified namespace.
+
+  /gen-ai/api/v1/mcp/{namespace}/{service}:
+    summary: Access MCP (Model Context Protocol) servers
+    description: >-
+      Proxies requests to MCP servers in different namespaces.
+      This endpoint provides authenticated access to MCP services across the Kubernetes cluster.
+      All requests are authenticated using Bearer tokens and authorized via Subject Access Review (SAR).
+      GET requests return service metadata from /.well-known/ai-plugin.json or root endpoint.
+      POST and PUT requests are proxied to the MCP service.
+    parameters:
+      - name: namespace
+        in: path
+        description: Kubernetes namespace containing the MCP service
+        required: true
+        schema:
+          type: string
+          example: "my-namespace"
+      - name: service
+        in: path
+        description: Name of the MCP service to access
+        required: true
+        schema:
+          type: string
+          example: "my-mcp-service"
+    get:
+      tags:
+        - MCP
+      security:
+        - Bearer: []
+      responses:
+        "200":
+          description: Service metadata from MCP service
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Service metadata (AI plugin JSON or root endpoint response)
+                example:
+                  schema_version: "v1"
+                  name_for_model: "mcp_service"
+                  name_for_human: "MCP Service"
+                  description_for_model: "A Model Context Protocol service"
+                  description_for_human: "Access to MCP service functionality"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      operationId: getMCPService
+      summary: GET MCP Service Metadata
+      description: Retrieves service metadata from the MCP service's AI plugin JSON or root endpoint.
+    post:
+      tags:
+        - MCP
+      security:
+        - Bearer: []
+      requestBody:
+        description: Request body to send to the MCP service
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Request payload (varies by MCP service)
+              example:
+                action: "create"
+                data: "Request data"
+        required: false
+      responses:
+        "200":
+          description: Successfully processed request by MCP service
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Response from the MCP service (varies by service)
+                example:
+                  result: "success"
+                  data: "Response from MCP service"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      operationId: postMCPService
+      summary: POST to MCP Service
+      description: Sends data to the specified MCP service in the given namespace.
+    put:
+      tags:
+        - MCP
+      security:
+        - Bearer: []
+      requestBody:
+        description: Request body to send to the MCP service
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Request payload (varies by MCP service)
+              example:
+                action: "update"
+                data: "Request data"
+        required: false
+      responses:
+        "200":
+          description: Successfully processed request by MCP service
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Response from the MCP service (varies by service)
+                example:
+                  result: "success"
+                  data: "Response from MCP service"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      operationId: putMCPService
+      summary: PUT to MCP Service
+      description: Updates data in the specified MCP service in the given namespace.
 
 components:
   securitySchemes:
@@ -1256,6 +1393,13 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
 
+    Forbidden:
+      description: Forbidden - User lacks permission to access the requested resource
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
     NotFound:
       description: Not Found - Requested resource does not exist
       content:
@@ -1285,3 +1429,5 @@ tags:
     description: Code generation for Llama Stack integration
   - name: Kubernetes
     description: Kubernetes cluster operations and namespace management
+  - name: MCP
+    description: Model Context Protocol server access and management

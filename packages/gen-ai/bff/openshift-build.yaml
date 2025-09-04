@@ -1,0 +1,38 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: gen-ai-bff
+  labels:
+    app: gen-ai-bff
+    component: backend
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: gen-ai-bff:latest
+  source:
+    git:
+      uri: https://github.com/opendatahub-io/odh-dashboard.git
+      ref: main
+    contextDir: packages/gen-ai/bff
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile.openshift
+      env:
+        - name: GOOS
+          value: linux
+        - name: GOARCH
+          value: amd64
+        - name: CGO_ENABLED
+          value: "0"
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+  resources:
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"

@@ -101,7 +101,8 @@ func (app *App) InjectRequestIdentity(next http.Handler) http.Handler {
 		//skip use headers check if we are not on the configured API path prefix (i.e. we are on /healthcheck and / (static fe files) )
 		// Check for both direct API path and prefixed API path
 		isAPIPath := strings.HasPrefix(r.URL.Path, app.config.APIPathPrefix) ||
-			strings.HasPrefix(r.URL.Path, constants.PathPrefix+app.config.APIPathPrefix)
+			strings.HasPrefix(r.URL.Path, "/"+app.config.PathPrefix+app.config.APIPathPrefix) ||
+			strings.HasPrefix(r.URL.Path, "/gen-ai"+app.config.APIPathPrefix)
 
 		if !isAPIPath {
 			next.ServeHTTP(w, r)

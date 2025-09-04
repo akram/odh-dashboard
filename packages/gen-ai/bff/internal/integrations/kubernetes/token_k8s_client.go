@@ -307,3 +307,73 @@ func (kc *TokenKubernetesClient) extractEndpoints(isvc *kservev1beta1.InferenceS
 
 	return endpoints
 }
+
+// GetMCPServiceEndpoint retrieves the endpoint for the MCP service
+func (kc *TokenKubernetesClient) GetMCPServiceEndpoint(ctx context.Context, identity *integrations.RequestIdentity, namespace, serviceName string) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	// Get the Kubernetes service
+	var service corev1.Service
+	key := client.ObjectKey{
+		Namespace: namespace,
+		Name:      serviceName,
+	}
+	err := kc.Client.Get(ctx, key, &service)
+	if err != nil {
+		kc.Logger.Error("failed to get MCP service", "error", err, "namespace", namespace, "service", serviceName)
+		return "", fmt.Errorf("failed to get MCP service: %w", err)
+	}
+
+	// Check if service has ports
+	if len(service.Spec.Ports) == 0 {
+		return "", fmt.Errorf("service %s in namespace %s has no ports defined", serviceName, namespace)
+	}
+
+	// Find the appropriate port
+	var targetPort int32
+	var protocol string
+
+	// First, try to find a port named "http" or "https"
+	for _, port := range service.Spec.Ports {
+		if port.Name == "http" || port.Name == "https" {
+			targetPort = port.Port
+			protocol = strings.ToLower(string(port.Protocol))
+			if protocol == "" {
+				protocol = "tcp"
+			}
+			kc.Logger.Debug("Found named port", "port_name", port.Name, "port", targetPort, "protocol", protocol)
+			break
+		}
+	}
+
+	// If no named port found, use the first port
+	if targetPort == 0 {
+		targetPort = service.Spec.Ports[0].Port
+		protocol = strings.ToLower(string(service.Spec.Ports[0].Protocol))
+		if protocol == "" {
+			protocol = "tcp"
+		}
+		kc.Logger.Debug("Using first port", "port", targetPort, "protocol", protocol)
+	}
+
+	// Determine the scheme based on protocol and port
+	scheme := "http"
+	if protocol == "https" || targetPort == 443 {
+		scheme = "https"
+	} else if targetPort == 80 {
+		scheme = "http"
+	}
+
+	// Construct the service endpoint
+	endpoint := fmt.Sprintf("%s://%s.%s.svc.cluster.local:%d", scheme, serviceName, namespace, targetPort)
+
+	kc.Logger.Info("MCP service endpoint retrieved",
+		"endpoint", endpoint,
+		"namespace", namespace,
+		"service", serviceName,
+		"port", targetPort,
+		"protocol", protocol,
+		"scheme", scheme)
+	return endpoint, nil
+}

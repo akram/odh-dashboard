@@ -145,11 +145,17 @@ func (app *App) Routes() http.Handler {
 	// Llama Stack Distribution status endpoint
 	apiRouter.GET(constants.LlamaStackDistributionStatusPath, app.RequireAccessToService(app.AttachNamespace(app.LlamaStackDistributionStatusHandler)))
 
+	// MCP server endpoint - supports GET, POST, PUT only
+	apiRouter.GET(constants.MCPPath, app.RequireAccessToService(app.MCPHandler))
+	apiRouter.POST(constants.MCPPath, app.RequireAccessToService(app.MCPHandler))
+	apiRouter.PUT(constants.MCPPath, app.RequireAccessToService(app.MCPHandler))
+
 	// App Router
 	appMux := http.NewServeMux()
 
-	// handler for api calls
-	appMux.Handle(constants.PathPrefix+constants.ApiPathPrefix+"/", http.StripPrefix(constants.PathPrefix, apiRouter))
+	// handler for api calls - support both /genai and /gen-ai prefixes
+	appMux.Handle("/"+app.config.PathPrefix+constants.ApiPathPrefix+"/", http.StripPrefix("/"+app.config.PathPrefix, apiRouter))
+	appMux.Handle("/gen-ai"+constants.ApiPathPrefix+"/", http.StripPrefix("/gen-ai", apiRouter))
 
 	// Llama Stack proxy handler (unprotected)
 	appMux.HandleFunc("/llama-stack/", app.HandleLlamaStackProxy)
@@ -157,7 +163,6 @@ func (app *App) Routes() http.Handler {
 	// file server for the frontend file and SPA routes
 	staticDir := http.Dir(app.config.StaticAssetsDir)
 	fileServer := http.FileServer(staticDir)
-	appMux.Handle(constants.ApiPathPrefix+"/", apiRouter)
 	appMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		ctxLogger := helper.GetContextLoggerFromReq(r)
 
@@ -193,10 +198,10 @@ func (app *App) Routes() http.Handler {
 	})
 
 	// OpenAPI routes (unprotected) - handle these before the main app routes
-	combinedMux.HandleFunc(constants.OpenAPIPath, app.openAPI.HandleOpenAPIRedirectWrapper)
-	combinedMux.HandleFunc(constants.OpenAPIJSONPath, app.openAPI.HandleOpenAPIJSONWrapper)
-	combinedMux.HandleFunc(constants.OpenAPIYAMLPath, app.openAPI.HandleOpenAPIYAMLWrapper)
-	combinedMux.HandleFunc(constants.SwaggerUIPath, app.openAPI.HandleSwaggerUIWrapper)
+	combinedMux.HandleFunc("/"+app.config.PathPrefix+"/openapi", app.openAPI.HandleOpenAPIRedirectWrapper)
+	combinedMux.HandleFunc("/"+app.config.PathPrefix+"/openapi.json", app.openAPI.HandleOpenAPIJSONWrapper)
+	combinedMux.HandleFunc("/"+app.config.PathPrefix+"/openapi.yaml", app.openAPI.HandleOpenAPIYAMLWrapper)
+	combinedMux.HandleFunc("/"+app.config.PathPrefix+"/swagger-ui", app.openAPI.HandleSwaggerUIWrapper)
 
 	combinedMux.Handle("/", app.RecoverPanic(app.EnableTelemetry(app.EnableCORS(app.InjectRequestIdentity(appMux)))))
 

@@ -1,0 +1,18 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: gen-ai-bff
+  labels:
+    app: gen-ai-bff
+    component: backend
+spec:
+  host: gen-ai-bff.apps.$(oc get domain -o jsonpath='{.items[0].spec.domain}')
+  to:
+    kind: Service
+    name: gen-ai-bff
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
