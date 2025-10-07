@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: bff-llamastack-access
+rules:
+- apiGroups: ["llamastack.io"]
+  resources: ["llamastackdistributions"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: bff-llamastack-access
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: bff-llamastack-access
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: rhoai-30-genai
