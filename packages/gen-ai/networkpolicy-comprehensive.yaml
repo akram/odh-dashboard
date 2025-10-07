@@ -1,0 +1,82 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-comprehensive-traffic
+  labels:
+    app: bff
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow traffic from llamastack namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: llamastack
+  # Allow traffic from rhoai-30-genai namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: rhoai-30-genai
+  # Allow traffic from OpenShift router and system namespaces
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: openshift-ingress
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: openshift-route-controller-manager
+  # Allow traffic from any namespace (for external access through routes)
+  - from:
+    - namespaceSelector: {}
+  # Allow traffic from pods with specific labels (for system components)
+  - from:
+    - podSelector:
+        matchLabels:
+          app: router
+  egress:
+  # Allow traffic to llamastack namespace
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: llamastack
+  # Allow traffic to rhoai-30-genai namespace
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: rhoai-30-genai
+  # Allow DNS resolution to any destination
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow DNS resolution to kube-dns service
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: openshift-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow HTTPS/HTTP traffic to external services
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+  # Allow traffic to OpenShift API server
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 6443
+  # Allow traffic to any namespace (for service discovery)
+  - to:
+    - namespaceSelector: {}
