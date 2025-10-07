@@ -648,3 +648,40 @@ func (c *LlamaStackClient) DeleteVectorStoreFile(ctx context.Context, vectorStor
 
 	return nil
 }
+
+// RegisterModel registers a new model with LlamaStack.
+func (c *LlamaStackClient) RegisterModel(ctx context.Context, modelID, providerID, modelType string, metadata map[string]interface{}) error {
+	if modelID == "" {
+		return fmt.Errorf("modelID is required")
+	}
+	if providerID == "" {
+		return fmt.Errorf("providerID is required")
+	}
+	if modelType == "" {
+		return fmt.Errorf("modelType is required")
+	}
+
+	// Create model registration request
+	modelRequest := struct {
+		ModelID         string                 `json:"model_id"`
+		ProviderModelID string                 `json:"provider_model_id"`
+		ProviderID      string                 `json:"provider_id"`
+		ModelType       string                 `json:"model_type"`
+		Metadata        map[string]interface{} `json:"metadata,omitempty"`
+	}{
+		ModelID:         modelID,
+		ProviderModelID: modelID, // Using modelID as provider_model_id since they're the same in the example
+		ProviderID:      providerID,
+		ModelType:       modelType,
+		Metadata:        metadata,
+	}
+
+	// Use the OpenAI client to make the request
+	path := "models"
+	var response interface{}
+	if err := c.client.Post(ctx, path, modelRequest, &response); err != nil {
+		return fmt.Errorf("failed to register model: %w", err)
+	}
+
+	return nil
+}

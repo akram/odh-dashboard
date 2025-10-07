@@ -809,13 +809,13 @@ func (kc *TokenKubernetesClient) InstallLlamaStackDistribution(ctx context.Conte
 	}
 	kc.Logger.Info("LSD is ready", "namespace", namespace, "lsdName", lsdName, "phase", updatedLSD.Status.Phase)
 
-	// Now that LSD is ready, verify models are registered
-	kc.Logger.Info("starting model verification", "namespace", namespace, "lsdName", lsdName, "models", models)
-	if err := kc.verifyLSDModels(ctx, updatedLSD, namespace, lsdName, models); err != nil {
-		kc.Logger.Error("model verification failed", "error", err, "namespace", namespace, "lsdName", lsdName)
+	// Now that LSD is ready, register models
+	kc.Logger.Info("starting model registration", "namespace", namespace, "lsdName", lsdName, "models", models)
+	if err := kc.registerModels(ctx, updatedLSD, namespace, lsdName, models); err != nil {
+		kc.Logger.Error("model registration failed", "error", err, "namespace", namespace, "lsdName", lsdName)
 		return lsd, err
 	}
-	kc.Logger.Info("model verification completed successfully", "namespace", namespace, "lsdName", lsdName)
+	kc.Logger.Info("model registration completed successfully", "namespace", namespace, "lsdName", lsdName)
 
 	return updatedLSD, nil
 }
@@ -1174,9 +1174,9 @@ func (kc *TokenKubernetesClient) findInferenceServiceByModelName(ctx context.Con
 	return nil, fmt.Errorf("InferenceService with model name '%s' not found in namespace %s", modelName, namespace)
 }
 
-// verifyLSDModels verifies that models are registered in the LSD
-func (kc *TokenKubernetesClient) verifyLSDModels(ctx context.Context, lsd *lsdapi.LlamaStackDistribution, namespace, lsdName string, models []string) error {
-	kc.Logger.Info("verifying models in LSD", "namespace", namespace, "lsdName", lsdName, "models", models)
+// registerModels registers models in the LSD
+func (kc *TokenKubernetesClient) registerModels(ctx context.Context, lsd *lsdapi.LlamaStackDistribution, namespace, lsdName string, models []string) error {
+	kc.Logger.Info("registering models in LSD", "namespace", namespace, "lsdName", lsdName, "models", models)
 
 	// Get the LSD service URL
 	serviceURL := lsd.Status.ServiceURL
@@ -1196,19 +1196,30 @@ func (kc *TokenKubernetesClient) verifyLSDModels(ctx context.Context, lsd *lsdap
 	}
 	llamaClient := llamastack.NewLlamaStackClientWithHeaders(serviceURL, headers)
 
-	// List available models to verify registration
-	availableModels, err := llamaClient.ListModels(ctx)
-	if err != nil {
-		kc.Logger.Error("failed to list models", "error", err)
-		return fmt.Errorf("failed to list models: %w", err)
-	}
+	// Register each model
+	for _, modelName := range models {
+		// Get model details from serving runtime
+		modelDetails, err := kc.getModelDetailsFromServingRuntime(ctx, namespace, modelName)
+		if err != nil {
+			kc.Logger.Error("failed to get model details", "model", modelName, "error", err)
+			return fmt.Errorf("failed to get details for model '%s': %w", modelName, err)
+		}
 
-	// Log available models
-	var modelIDs []string
-	for _, model := range availableModels {
-		modelIDs = append(modelIDs, model.ID)
+		// Create model registration request
+		modelID := strings.ReplaceAll(modelDetails["model_id"].(string), ":", "-")
+		providerID := modelDetails["provider_id"].(string)
+		modelType := modelDetails["model_type"].(string)
+		metadata := modelDetails["metadata"].(map[string]interface{})
+
+		// Register the model with LlamaStack
+		err = llamaClient.RegisterModel(ctx, modelID, providerID, modelType, metadata)
+		if err != nil {
+			kc.Logger.Error("failed to register model", "model", modelName, "error", err)
+			return fmt.Errorf("failed to register model '%s': %w", modelName, err)
+		}
+
+		kc.Logger.Info("successfully registered model", "model", modelName, "modelID", modelID)
 	}
-	kc.Logger.Info("available models in LSD", "models", modelIDs)
 
 	return nil
 }
