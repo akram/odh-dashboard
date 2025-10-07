@@ -1,0 +1,9 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: bff
+  labels:
+    app: bff
+spec:
+  lookupPolicy:
+    local: false

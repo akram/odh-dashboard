@@ -20,10 +20,22 @@ type LlamaStackClient struct {
 
 // NewLlamaStackClient creates a new client configured for Llama Stack.
 func NewLlamaStackClient(baseURL string) *LlamaStackClient {
-	client := openai.NewClient(
-		option.WithBaseURL(baseURL+"/v1/openai/v1"),
+	return NewLlamaStackClientWithHeaders(baseURL, nil)
+}
+
+// NewLlamaStackClientWithHeaders creates a new client configured for Llama Stack with custom headers.
+func NewLlamaStackClientWithHeaders(baseURL string, headers map[string]string) *LlamaStackClient {
+	options := []option.RequestOption{
+		option.WithBaseURL(baseURL + "/v1/openai/v1"),
 		option.WithAPIKey("none"),
-	)
+	}
+
+	// Add custom headers if provided
+	for key, value := range headers {
+		options = append(options, option.WithHeader(key, value))
+	}
+
+	client := openai.NewClient(options...)
 
 	return &LlamaStackClient{
 		client: &client,

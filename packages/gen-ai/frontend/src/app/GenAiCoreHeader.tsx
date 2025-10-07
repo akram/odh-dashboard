@@ -1,8 +1,10 @@
 import * as React from 'react';
 import { Content, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
-import { ProjectIconWithSize } from '@odh-dashboard/internal/concepts/projects/ProjectIconWithSize';
-import { IconSize } from '@odh-dashboard/internal/types';
+import { getProjectIconWithSize, getIconSize } from '~/app/standalone/standaloneComponents';
+
+const ProjectIconWithSize = getProjectIconWithSize();
+const IconSize = getIconSize();
 import GenAiCoreProjectSelector from '~/app/GenAiCoreProjectSelector';
 
 type GenAiCoreHeaderProps = {

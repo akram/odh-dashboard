@@ -9,6 +9,7 @@ import (
 
 	helper "github.com/opendatahub-io/gen-ai/internal/helpers"
 	"github.com/opendatahub-io/gen-ai/internal/integrations"
+	"github.com/opendatahub-io/gen-ai/internal/integrations/llamastack"
 	"github.com/opendatahub-io/gen-ai/internal/models"
 	authnv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
@@ -37,6 +38,9 @@ const (
 	ServingRuntimeVersionAnnotation     = "opendatahub.io/runtime-version"
 	ServingRuntimeAPIProtocolAnnotation = "opendatahub.io/apiProtocol"
 	DisplayNameAnnotation               = "openshift.io/display-name"
+
+	// Default timeout in seconds for LSD to become ready
+	defaultLSDReadyTimeoutSeconds = 120
 
 	// InferenceService annotation keys
 	InferenceServiceDescriptionAnnotation = "openshift.io/description"
@@ -770,7 +774,7 @@ func (kc *TokenKubernetesClient) InstallLlamaStackDistribution(ctx context.Conte
 					Port: 8321,
 				},
 				Distribution: lsdapi.DistributionType{
-					Name: "rh-dev",
+					Image: "quay.io/ibaranau/llama:latest",
 				},
 				UserConfig: &lsdapi.UserConfigSpec{
 					ConfigMapName: configMapName,
@@ -796,7 +800,76 @@ func (kc *TokenKubernetesClient) InstallLlamaStackDistribution(ctx context.Conte
 		return nil, fmt.Errorf("failed to create ConfigMap: %w", err)
 	}
 
-	return lsd, nil
+	// Wait for LSD to be ready with default timeout
+	kc.Logger.Info("waiting for LSD to be ready", "namespace", namespace, "lsdName", lsdName, "timeoutSeconds", defaultLSDReadyTimeoutSeconds)
+	updatedLSD, err := kc.waitForLSDReady(ctx, namespace, lsdName, defaultLSDReadyTimeoutSeconds)
+	if err != nil {
+		kc.Logger.Error("failed waiting for LSD to be ready", "error", err, "namespace", namespace, "lsdName", lsdName)
+		return lsd, err
+	}
+	kc.Logger.Info("LSD is ready", "namespace", namespace, "lsdName", lsdName, "phase", updatedLSD.Status.Phase)
+
+	// Now that LSD is ready, verify models are registered
+	kc.Logger.Info("starting model verification", "namespace", namespace, "lsdName", lsdName, "models", models)
+	if err := kc.verifyLSDModels(ctx, updatedLSD, namespace, lsdName, models); err != nil {
+		kc.Logger.Error("model verification failed", "error", err, "namespace", namespace, "lsdName", lsdName)
+		return lsd, err
+	}
+	kc.Logger.Info("model verification completed successfully", "namespace", namespace, "lsdName", lsdName)
+
+	return updatedLSD, nil
+}
+
+// waitForLSDReady waits for a LlamaStackDistribution to reach Ready state with a timeout
+func (kc *TokenKubernetesClient) waitForLSDReady(ctx context.Context, namespace, name string, timeoutSeconds int) (*lsdapi.LlamaStackDistribution, error) {
+	if timeoutSeconds <= 0 {
+		timeoutSeconds = defaultLSDReadyTimeoutSeconds
+	}
+
+	timeout := time.After(time.Duration(timeoutSeconds) * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	kc.Logger.Info("waiting for LlamaStackDistribution to be ready", "namespace", namespace, "name", name)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("context cancelled while waiting for LlamaStackDistribution: %w", ctx.Err())
+		case <-timeout:
+			return nil, fmt.Errorf("timeout waiting for LlamaStackDistribution to be ready")
+		case <-ticker.C:
+			// Get the latest LSD status
+			var updatedLSD lsdapi.LlamaStackDistribution
+			err := kc.Client.Get(ctx, client.ObjectKey{
+				Namespace: namespace,
+				Name:      name,
+			}, &updatedLSD)
+			if err != nil {
+				kc.Logger.Error("failed to get LlamaStackDistribution status", "error", err)
+				return nil, fmt.Errorf("failed to get LlamaStackDistribution status: %w", err)
+			}
+
+			// Check if LSD is ready by looking at its phase
+			kc.Logger.Info("checking LSD status",
+				"namespace", namespace,
+				"name", name,
+				"phase", updatedLSD.Status.Phase)
+
+			if updatedLSD.Status.Phase == "Ready" {
+				kc.Logger.Info("LlamaStackDistribution is ready",
+					"namespace", namespace,
+					"name", name,
+					"phase", updatedLSD.Status.Phase)
+				return &updatedLSD, nil
+			}
+
+			kc.Logger.Info("waiting for LlamaStackDistribution to be ready...",
+				"namespace", namespace,
+				"name", name,
+				"phase", updatedLSD.Status.Phase)
+		}
+	}
 }
 
 // createConfigMapWithOwnerReference creates a ConfigMap and sets up owner reference to LSD
@@ -892,6 +965,9 @@ func (kc *TokenKubernetesClient) generateLlamaStackConfig(ctx context.Context, n
     model_type: %s
 `, metadataYAML, modelID, providerID, modelType)
 
+		kc.Logger.Info("modelsYAML", "modelsYAML", modelsYAML)
+		// reset modelsYAML to workaround the issue with of lls not starting with authenticated endpoints
+		modelsYAML = ""
 		// Add provider to providers section
 		providersYAML += fmt.Sprintf(`  - provider_id: %s
     provider_type: remote::vllm
@@ -1096,6 +1172,48 @@ func (kc *TokenKubernetesClient) findInferenceServiceByModelName(ctx context.Con
 	}
 
 	return nil, fmt.Errorf("InferenceService with model name '%s' not found in namespace %s", modelName, namespace)
+}
+
+// verifyLSDModels verifies that models are registered in the LSD
+func (kc *TokenKubernetesClient) verifyLSDModels(ctx context.Context, lsd *lsdapi.LlamaStackDistribution, namespace, lsdName string, models []string) error {
+	kc.Logger.Info("verifying models in LSD", "namespace", namespace, "lsdName", lsdName, "models", models)
+
+	// Get the LSD service URL
+	serviceURL := lsd.Status.ServiceURL
+	if serviceURL == "" {
+		return fmt.Errorf("LSD service URL not available")
+	}
+	if !strings.HasSuffix(serviceURL, "/v1") {
+		serviceURL = serviceURL + "/v1"
+	}
+
+	// Get the user's bearer token from the request identity
+	token, err := kc.BearerToken()
+	if err != nil {
+		return fmt.Errorf("failed to get bearer token: %w", err)
+	}
+
+	// Create LlamaStack client with required headers for model registration
+	headers := map[string]string{
+		"x-llamastack-provider-data": fmt.Sprintf(`{"vllm_api_token": "%s"}`, token),
+	}
+	llamaClient := llamastack.NewLlamaStackClientWithHeaders(serviceURL, headers)
+
+	// List available models to verify registration
+	availableModels, err := llamaClient.ListModels(ctx)
+	if err != nil {
+		kc.Logger.Error("failed to list models", "error", err)
+		return fmt.Errorf("failed to list models: %w", err)
+	}
+
+	// Log available models
+	var modelIDs []string
+	for _, model := range availableModels {
+		modelIDs = append(modelIDs, model.ID)
+	}
+	kc.Logger.Info("available models in LSD", "models", modelIDs)
+
+	return nil
 }
 
 func (kc *TokenKubernetesClient) DeleteLlamaStackDistribution(ctx context.Context, identity *integrations.RequestIdentity, namespace string, name string) (*lsdapi.LlamaStackDistribution, error) {

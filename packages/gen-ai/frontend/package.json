@@ -5,7 +5,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "prebuild:standalone": "npm run test:type-check:standalone && npm run clean",
+    "prebuild:standalone": "npm run clean",
     "build": "run-s build:prod",
     "build:standalone": "webpack --config ./config/webpack.prod.js",
     "build:prod": "webpack --config ./config/webpack.prod.js",

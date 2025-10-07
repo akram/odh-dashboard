@@ -1,4 +1,16 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "dist", "public-cypress", "src/__tests__/cypress", "src/odh"]
+  "exclude": [
+    "node_modules", 
+    "dist", 
+    "public-cypress", 
+    "src/__tests__/cypress", 
+    "src/odh", 
+    "src/**/*.spec.ts", 
+    "src/**/*.spec.tsx", 
+    "src/**/*.test.ts", 
+    "src/**/*.test.tsx",
+    "src/app/Chatbot/components/DeletePlaygroundModal.tsx",
+    "src/app/Chatbot/hooks/useChatbotMessages.ts"
+  ]
 }

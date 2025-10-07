@@ -45,10 +45,11 @@ func (app *App) LlamaStackDistributionInstallHandler(w http.ResponseWriter, r *h
 	}
 
 	// Validate that models list is not empty
-	if len(installRequest.Models) == 0 {
-		app.badRequestResponse(w, r, fmt.Errorf("models list cannot be empty"))
-		return
-	}
+	// if len(installRequest.Models) == 0 {
+	//	app.badRequestResponse(w, r, fmt.Errorf("models list cannot be empty"))
+	//	return
+	//}
+	//}
 
 	// Extract the list of models from the request
 	modelsToInstall := installRequest.Models

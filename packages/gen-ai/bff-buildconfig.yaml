@@ -1,0 +1,28 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: bff
+  labels:
+    app: bff
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/akram/odh-dashboard.git
+      ref: fix-docker-build-standalone
+    contextDir: packages/gen-ai
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile.openshift
+  output:
+    to:
+      kind: ImageStreamTag
+      name: bff:latest
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChange:
+        from:
+          kind: ImageStreamTag
+          name: bff:latest

@@ -2,7 +2,9 @@ import * as React from 'react';
 import { EmptyState, EmptyStateBody, EmptyStateFooter } from '@patternfly/react-core';
 import { WrenchIcon } from '@patternfly/react-icons/dist/esm/icons/wrench-icon';
 import { useNavigate } from 'react-router-dom';
-import NewProjectButton from '@odh-dashboard/internal/pages/projects/screens/projects/NewProjectButton';
+import { getNewProjectButton } from '~/app/standalone/standaloneComponents';
+
+const NewProjectButton = getNewProjectButton();
 
 type GenAiCoreNoProjectsProps = {
   getRedirectPath: (namespace: string) => string;
@@ -22,7 +24,7 @@ const GenAiCoreNoProjects: React.FC<GenAiCoreNoProjectsProps> = ({ getRedirectPa
       <EmptyStateFooter>
         <NewProjectButton
           closeOnCreate
-          onProjectCreated={(projectName) => navigate(getRedirectPath(projectName))}
+          onProjectCreated={(projectName: string) => navigate(getRedirectPath(projectName))}
         />
       </EmptyStateFooter>
     </EmptyState>

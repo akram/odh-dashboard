@@ -1,5 +1,7 @@
 import * as React from 'react';
-import ProjectSelector from '@odh-dashboard/internal/concepts/projects/ProjectSelector';
+import { getProjectSelector } from '~/app/standalone/standaloneComponents';
+
+const ProjectSelector = getProjectSelector();
 import { useNamespaceSelector } from 'mod-arch-core';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,7 +21,7 @@ const GenAiCoreProjectSelector: React.FC<PipelineCoreProjectSelectorProps> = ({
   return (
     <ProjectSelector
       {...projectSelectorProps}
-      onSelection={(projectName) => {
+      onSelection={(projectName: string) => {
         const match = projectName
           ? (namespaces.find((n) => n.name === projectName) ?? undefined)
           : undefined;

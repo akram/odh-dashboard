@@ -1,10 +1,15 @@
 # Frontend build stage
 FROM registry.access.redhat.com/ubi9/nodejs-20 AS ui-builder
 COPY ./frontend/ ./
-RUN npm cache clean --force && npm ci --omit=optional && npm run build
+USER 0
+RUN chown -R 1001:0 /opt/app-root/src && chmod -R g+rwX /opt/app-root/src
+# Set deployment mode to standalone to avoid @odh-dashboard/internal dependencies
+ENV DEPLOYMENT_MODE=standalone
+RUN npm run build:standalone
+USER 1001
 
 # Backend build stage
-FROM registry.redhat.io/ubi9/go-toolset:1.23.6 AS bff-builder
+FROM registry.redhat.io/ubi9/go-toolset:1.24 AS bff-builder
 WORKDIR /usr/src/app
 COPY bff/go.mod bff/go.sum ./
 RUN go mod download

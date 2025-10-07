@@ -3,7 +3,9 @@ import { Truncate, Button, Tooltip, Spinner } from '@patternfly/react-core';
 import { Td, Tr } from '@patternfly/react-table';
 import { LockIcon, UnlockIcon } from '@patternfly/react-icons';
 import { CheckboxTd } from 'mod-arch-shared';
-import ScrewWrenchIcon from '@odh-dashboard/internal/images/icons/ScrewWrenchIcon';
+import { getScrewWrenchIcon } from '~/app/standalone/standaloneComponents';
+
+const ScrewWrenchIcon = getScrewWrenchIcon();
 import { MCPServer } from '~/app/types';
 
 interface MCPServerPanelRowProps {
