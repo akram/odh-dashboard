@@ -15,7 +15,8 @@ import (
 
 // LlamaStackClient wraps the OpenAI client for Llama Stack communication.
 type LlamaStackClient struct {
-	client *openai.Client
+	client  *openai.Client
+	baseURL string
 }
 
 // NewLlamaStackClient creates a new client configured for Llama Stack.
@@ -38,7 +39,8 @@ func NewLlamaStackClientWithHeaders(baseURL string, headers map[string]string) *
 	client := openai.NewClient(options...)
 
 	return &LlamaStackClient{
-		client: &client,
+		client:  &client,
+		baseURL: baseURL,
 	}
 }
 
@@ -676,10 +678,11 @@ func (c *LlamaStackClient) RegisterModel(ctx context.Context, modelID, providerI
 		Metadata:        metadata,
 	}
 
-	// Use the OpenAI client to make the request
-	path := "models"
+	// Use the OpenAI client to make the request to the LlamaStack models endpoint
+	// Note: This endpoint is different from the OpenAI-style endpoints
+	path := "/v1/models"
 	var response interface{}
-	if err := c.client.Post(ctx, path, modelRequest, &response); err != nil {
+	if err := c.client.Post(ctx, path, modelRequest, &response, option.WithBaseURL(c.baseURL)); err != nil {
 		return fmt.Errorf("failed to register model: %w", err)
 	}
 
