@@ -7,14 +7,14 @@ info:
     name: 'Apache 2.0'
     url: 'https://www.apache.org/licenses/LICENSE-2.0'
 servers:
-  - url: 'http://localhost:8080'
-    description: 'Local development server'
-  - url: 'https://bff-rhoai-30-genai.apps.rhoai-30-genai.devcluster.openshift.com'
-    description: 'Production server (RHOAI)'
-  - url: 'https://bff-rhoai-30-genai.apps.rhoai-30-genai.devcluster.openshift.com'
-    description: 'Staging server (RHOAI)'
-  - url: 'http://bff-service:8080'
-    description: 'Internal cluster service'
+  - url: '${SWAGGER_SERVER_URL:-http://localhost:8080}'
+    description: '${SWAGGER_SERVER_DESCRIPTION:-Local development server}'
+  - url: '${SWAGGER_PRODUCTION_URL:-https://bff-rhoai-30-genai.apps.rhoai-30-genai.devcluster.openshift.com}'
+    description: '${SWAGGER_PRODUCTION_DESCRIPTION:-Production server (RHOAI)}'
+  - url: '${SWAGGER_STAGING_URL:-https://bff-rhoai-30-genai.apps.rhoai-30-genai.devcluster.openshift.com}'
+    description: '${SWAGGER_STAGING_DESCRIPTION:-Staging server (RHOAI)}'
+  - url: '${SWAGGER_INTERNAL_URL:-http://bff-service:8080}'
+    description: '${SWAGGER_INTERNAL_DESCRIPTION:-Internal cluster service}'
 
 # Global security requirement - all endpoints require Bearer token by default
 security:
