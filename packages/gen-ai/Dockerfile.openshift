@@ -24,6 +24,7 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:9.3
 WORKDIR /
 COPY --from=bff-builder /tmp/bff ./
 COPY --from=ui-builder /opt/app-root/src/dist/ ./static/
+COPY bff/openapi/ ./openapi/
 
 # OAuth environment variables
 ENV OAUTH_ENABLED=false \
