@@ -106,7 +106,7 @@ func (h *OpenAPIHandler) HandleOpenAPIYAML(w http.ResponseWriter, r *http.Reques
 	// Create a copy of the spec with dynamic servers and convert to YAML
 	specCopy := *h.spec
 	specCopy.Servers = getDynamicServers(r)
-	
+
 	// Convert to YAML (we'll use JSON for now, but you could use a YAML library)
 	jsonData, err := json.MarshalIndent(&specCopy, "", "  ")
 	if err != nil {
@@ -230,12 +230,12 @@ func getDynamicServers(r *http.Request) []*openapi3.Server {
 	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
 		scheme = "https"
 	}
-	
+
 	host := r.Host
 	if host == "" {
 		host = "localhost:8080"
 	}
-	
+
 	currentServerURL := fmt.Sprintf("%s://%s", scheme, host)
 
 	// Get namespace from environment or detect from host

@@ -1183,9 +1183,6 @@ func (kc *TokenKubernetesClient) verifyLSDModels(ctx context.Context, lsd *lsdap
 	if serviceURL == "" {
 		return fmt.Errorf("LSD service URL not available")
 	}
-	if !strings.HasSuffix(serviceURL, "/v1") {
-		serviceURL = serviceURL + "/v1"
-	}
 
 	// Get the user's bearer token from the request identity
 	token, err := kc.BearerToken()
