@@ -774,7 +774,7 @@ func (kc *TokenKubernetesClient) InstallLlamaStackDistribution(ctx context.Conte
 					Port: 8321,
 				},
 				Distribution: lsdapi.DistributionType{
-					Image: "quay.io/ibaranau/llama:latest",
+					Image: "quay.io/akram/llamastack:main",
 				},
 				UserConfig: &lsdapi.UserConfigSpec{
 					ConfigMapName: configMapName,
