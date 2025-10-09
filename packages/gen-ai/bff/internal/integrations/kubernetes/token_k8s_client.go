@@ -708,24 +708,11 @@ func (kc *TokenKubernetesClient) InstallLlamaStackDistribution(ctx context.Conte
 							Name:  "VLLM_MAX_TOKENS",
 							Value: "4096",
 						},
-						{
-							Name: "VLLM_API_TOKEN",
-							ValueFrom: &corev1.EnvVarSource{
-								SecretKeyRef: &corev1.SecretKeySelector{
-									Key: "token",
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: vllmSecretName,
-									},
-								},
-							},
-						},
 					},
 					Name: "llama-stack",
 					Port: 8321,
 				},
-				Distribution: lsdapi.DistributionType{
-					Image: "quay.io/akram/llamastack:main",
-				},
+				Distribution: kc.getDistributionType(),
 				UserConfig: &lsdapi.UserConfigSpec{
 					ConfigMapName: configMapName,
 				},
@@ -1085,27 +1072,6 @@ func (kc *TokenKubernetesClient) findInferenceServiceByModelName(ctx context.Con
 	}
 
 	return nil, fmt.Errorf("InferenceService with model name '%s' not found in namespace %s", modelName, namespace)
-}
-
-// findLLMInferenceServiceByModelName finds an LLMInferenceService by its model name
-func (kc *TokenKubernetesClient) findLLMInferenceServiceByModelName(ctx context.Context, namespace, modelName string) (*kservev1alpha1.LLMInferenceService, error) {
-	// List all LLMInferenceServices in the namespace
-	var llmSvcList kservev1alpha1.LLMInferenceServiceList
-	err := kc.Client.List(ctx, &llmSvcList, client.InNamespace(namespace))
-	if err != nil {
-		kc.Logger.Error("failed to list LLMInferenceServices", "error", err, "namespace", namespace)
-		return nil, fmt.Errorf("failed to list LLMInferenceServices in namespace %s: %w", namespace, err)
-	}
-
-	// Find LLMInferenceService with name matching the model name
-	for _, llmSvc := range llmSvcList.Items {
-		if llmSvc.Name == modelName {
-			kc.Logger.Info("found LLMInferenceService by model name", "modelName", modelName, "llmSvcName", llmSvc.Name, "namespace", namespace)
-			return &llmSvc, nil
-		}
-	}
-
-	return nil, fmt.Errorf("LLMInferenceService with model name '%s' not found in namespace %s", modelName, namespace)
 }
 
 // extractEndpointFromLLMInferenceService extracts the endpoint URL from LLMInferenceService status.addresses

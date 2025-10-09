@@ -31,6 +31,8 @@ type EnvConfig struct {
 
 	// Llama Stack Configuration
 	LlamaStackURL string
+	// Default name for LlamaStack Distribution, can be either an image URL (e.g., "quay.io/llamastack/llamastack:main") or a distribution name (e.g., "rh")
+	LlamaStackDistributionName string
 
 	// MaaS (Model as a Service) Configuration
 	MaaSURL string

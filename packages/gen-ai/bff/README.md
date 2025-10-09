@@ -83,6 +83,7 @@ make run STATIC_ASSETS_DIR=../frontend/dist
 - `AUTH_METHOD=user_token`: Enables token-based authentication
 - `AUTH_TOKEN_HEADER=Authorization`: Header name for the bearer token
 - `AUTH_TOKEN_PREFIX="Bearer "`: Token prefix format
+- `LLAMASTACK_DISTRIBUTION_NAME`: Default name for LlamaStack Distribution. Can be either an image URL (e.g., "quay.io/akram/llamastack:main") or a distribution name (e.g., "rh"). If the value contains a slash (/), it's treated as an image URL; otherwise, it's treated as a distribution name.
 
 ### 3. Test the Endpoints
 
