@@ -575,76 +575,6 @@ func (kc *TokenKubernetesClient) findServiceAccountAndSecretForInferenceService(
 	return "default", secretName
 }
 
-// Helper method to find the secret containing the service account token
-func (kc *TokenKubernetesClient) findSecretForServiceAccount(ctx context.Context, namespace, serviceAccountName string) string {
-	// List secrets in the namespace
-	var secretList corev1.SecretList
-	err := kc.Client.List(ctx, &secretList, client.InNamespace(namespace))
-	if err != nil {
-		kc.Logger.Warn("failed to list secrets", "error", err, "namespace", namespace)
-		return serviceAccountName + "-token"
-	}
-
-	// Find secret with the service account annotation
-	for _, secret := range secretList.Items {
-		if secret.Type == corev1.SecretTypeServiceAccountToken {
-			if saName, exists := secret.Annotations["kubernetes.io/service-account.name"]; exists && saName == serviceAccountName {
-				kc.Logger.Debug("found service account token secret",
-					"serviceAccount", serviceAccountName,
-					"secretName", secret.Name)
-				return secret.Name
-			}
-		}
-	}
-
-	// If no secret found, return the expected pattern
-	kc.Logger.Debug("no service account token secret found, using pattern",
-		"serviceAccount", serviceAccountName)
-	return serviceAccountName + "-token"
-}
-
-// Helper method to extract the actual token value and display name from a secret
-func (kc *TokenKubernetesClient) extractTokenAndDisplayNameFromSecret(ctx context.Context, namespace, secretName string) (string, string) {
-	if secretName == "" {
-		return "", ""
-	}
-
-	// Get the secret
-	var secret corev1.Secret
-	key := client.ObjectKey{
-		Namespace: namespace,
-		Name:      secretName,
-	}
-	err := kc.Client.Get(ctx, key, &secret)
-	if err != nil {
-		kc.Logger.Warn("failed to get secret", "error", err, "secretName", secretName, "namespace", namespace)
-		return "", ""
-	}
-
-	// Extract the token from the secret data
-	tokenValue := ""
-	if tokenData, exists := secret.Data["token"]; exists {
-		tokenValue = string(tokenData)
-	} else {
-		kc.Logger.Warn("token not found in secret data", "secretName", secretName)
-	}
-
-	// Extract the display name from the secret annotations
-	tokenName := ""
-	if secret.Annotations != nil {
-		if displayName, exists := secret.Annotations["openshift.io/display-name"]; exists {
-			tokenName = displayName
-		}
-	}
-
-	// If no display name found, use the secret name as fallback
-	if tokenName == "" {
-		tokenName = secretName
-	}
-
-	return tokenValue, tokenName
-}
-
 // Helper method to extract description from LLMInferenceService annotations
 func (kc *TokenKubernetesClient) extractDescriptionFromLLMInferenceService(llmSvc *kservev1alpha1.LLMInferenceService) string {
 	if llmSvc == nil || llmSvc.Annotations == nil {
@@ -730,6 +660,11 @@ func (kc *TokenKubernetesClient) InstallLlamaStackDistribution(ctx context.Conte
 	// Step 1: Create LlamaStackDistribution resource first
 
 	configMapName := "llama-stack-config"
+
+	// Get the VLLM secret name from the first LLM model
+	firstLLMModel := kc.findFirstLLMModelFromList(ctx, namespace, models)
+	vllmSecretName := kc.findVLLMSecretNameForModel(ctx, namespace, firstLLMModel)
+
 	lsd := &lsdapi.LlamaStackDistribution{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      lsdName,
@@ -773,12 +708,23 @@ func (kc *TokenKubernetesClient) InstallLlamaStackDistribution(ctx context.Conte
 							Name:  "VLLM_MAX_TOKENS",
 							Value: "4096",
 						},
+						{
+							Name: "VLLM_API_TOKEN",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									Key: "token",
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: vllmSecretName,
+									},
+								},
+							},
+						},
 					},
 					Name: "llama-stack",
 					Port: 8321,
 				},
 				Distribution: lsdapi.DistributionType{
-					Name: "rh-dev",
+					Image: "quay.io/akram/llamastack:main",
 				},
 				UserConfig: &lsdapi.UserConfigSpec{
 					ConfigMapName: configMapName,
