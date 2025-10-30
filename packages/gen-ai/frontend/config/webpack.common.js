@@ -1,14 +1,22 @@
+// Patch crypto.createHash for FIPS compliance BEFORE any webpack plugins are loaded
+const crypto = require('crypto');
+const _createHash = crypto.createHash;
+// Replace md4 with sha256 for FIPS compliance (md4 is not FIPS-compliant)
+crypto.createHash = function(algorithm, options) {
+  // Replace md4 with sha256, and ensure we use FIPS-compliant algorithms
+  const fipsAlgorithm = algorithm === 'md4' ? 'sha256' : algorithm;
+  return _createHash.call(this, fipsAlgorithm, options);
+};
+
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const { moduleFederationPlugins } = require('./moduleFederation');
-
-const BG_IMAGES_DIRNAME = 'bgimages';
 const { setupWebpackDotenvFilesForEnv } = require('./dotenv');
-
 const { name } = require('../package.json');
 
+const BG_IMAGES_DIRNAME = 'bgimages';
 const SRC_DIR = process.env._SRC_DIR;
 const DIST_DIR = process.env._DIST_DIR;
 const COMMON_DIR = process.env._COMMON_DIR;
@@ -145,6 +153,7 @@ module.exports = (env) => ({
     path: DIST_DIR,
     publicPath: 'auto',
     uniqueName: name,
+    hashFunction: 'sha256', // Use FIPS-compliant hash function
   },
   plugins: [
     ...moduleFederationPlugins,

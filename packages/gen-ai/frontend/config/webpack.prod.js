@@ -1,3 +1,13 @@
+// Patch crypto.createHash for FIPS compliance BEFORE any webpack plugins are loaded
+const crypto = require('crypto');
+const _createHash = crypto.createHash;
+// Replace md4 with sha256 for FIPS compliance (md4 is not FIPS-compliant)
+crypto.createHash = function(algorithm, options) {
+  // Replace md4 with sha256, and ensure we use FIPS-compliant algorithms
+  const fipsAlgorithm = algorithm === 'md4' ? 'sha256' : algorithm;
+  return _createHash.call(this, fipsAlgorithm, options);
+};
+
 const { merge } = require('webpack-merge');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
