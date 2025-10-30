@@ -1,3 +1,41 @@
+// Patch crypto.createHash for FIPS compliance BEFORE any webpack plugins are loaded
+// Note: webpack.common.js also patches this, but we patch here first to ensure
+// it's done before any plugins in this file are loaded
+const crypto = require('crypto');
+// Only patch if not already patched (idempotent)
+if (!crypto.createHash._isPatched) {
+  // Store the TRUE original before patching
+  const trueOriginal = crypto.createHash;
+  crypto.createHash = function(algorithm, options) {
+    const fipsAlgorithm = (!algorithm || algorithm === 'md4') ? 'sha256' : algorithm;
+    // On FIPS clusters, always call without options parameter
+    // Call with crypto as context to ensure proper binding
+    try {
+      // Always try without options first (safer for FIPS)
+      return trueOriginal.call(crypto, fipsAlgorithm);
+    } catch (error) {
+      // If sha256 fails, this is a serious FIPS issue - log and rethrow
+      // This should not happen as sha256 is FIPS-compliant
+      if (error.code === 'ERR_OSSL_EVP_UNSUPPORTED' || 
+          (error.message && error.message.includes('digital envelope'))) {
+        // Try with explicit algorithm string
+        try {
+          return trueOriginal.call(crypto, 'sha256');
+        } catch (e2) {
+          // Last resort: try with original algorithm if it's not md4
+          if (algorithm && algorithm !== 'md4') {
+            return trueOriginal.call(crypto, algorithm);
+          }
+          throw e2;
+        }
+      }
+      throw error;
+    }
+  };
+  crypto.createHash._isPatched = true;
+  crypto.createHash._originalCreateHash = trueOriginal;
+}
+
 const { execSync } = require('child_process');
 const { merge } = require('webpack-merge');
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
