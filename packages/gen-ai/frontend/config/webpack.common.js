@@ -1,19 +1,21 @@
 const path = require('path');
+const crypto = require('crypto');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const { moduleFederationPlugins } = require('./moduleFederation');
-
-const BG_IMAGES_DIRNAME = 'bgimages';
 const { setupWebpackDotenvFilesForEnv } = require('./dotenv');
-
 const { name } = require('../package.json');
 
+const BG_IMAGES_DIRNAME = 'bgimages';
 const SRC_DIR = process.env._SRC_DIR;
 const DIST_DIR = process.env._DIST_DIR;
 const COMMON_DIR = process.env._COMMON_DIR;
 const RELATIVE_DIRNAME = process.env._RELATIVE_DIRNAME;
 const IS_PROJECT_ROOT_DIR = process.env._IS_PROJECT_ROOT_DIR;
+const _createHash = crypto.createHash;
+
+crypto.createHash = (alg, opts) => _createHash(alg === 'md4' ? 'sha256' : alg, opts);
 
 module.exports = (env) => ({
   entry: {
