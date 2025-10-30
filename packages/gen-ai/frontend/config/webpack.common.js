@@ -1,14 +1,52 @@
+// Patch crypto.createHash for FIPS compliance BEFORE any webpack plugins are loaded
+// This must be done before any webpack plugins are instantiated
+const crypto = require('crypto');
+// Only patch if not already patched (idempotent)
+if (!crypto.createHash._isPatched) {
+  // Store the TRUE original before patching
+  const trueOriginal = crypto.createHash;
+  crypto.createHash = function(algorithm, options) {
+    // Replace md4 with sha256 for FIPS compliance (md4 is not FIPS-compliant)
+    // Also handle undefined/null algorithms
+    const fipsAlgorithm = (!algorithm || algorithm === 'md4') ? 'sha256' : algorithm;
+    // On FIPS clusters, always call without options parameter
+    // Call with crypto as context to ensure proper binding
+    try {
+      // Always try without options first (safer for FIPS)
+      return trueOriginal.call(crypto, fipsAlgorithm);
+    } catch (error) {
+      // If sha256 fails, this is a serious FIPS issue - log and rethrow
+      // This should not happen as sha256 is FIPS-compliant
+      if (error.code === 'ERR_OSSL_EVP_UNSUPPORTED' || 
+          (error.message && error.message.includes('digital envelope'))) {
+        // Try with explicit algorithm string
+        try {
+          return trueOriginal.call(crypto, 'sha256');
+        } catch (e2) {
+          // Last resort: try with original algorithm if it's not md4
+          if (algorithm && algorithm !== 'md4') {
+            return trueOriginal.call(crypto, algorithm);
+          }
+          throw e2;
+        }
+      }
+      throw error;
+    }
+  };
+  // Mark as patched and store TRUE original reference
+  crypto.createHash._isPatched = true;
+  crypto.createHash._originalCreateHash = trueOriginal;
+}
+
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const { moduleFederationPlugins } = require('./moduleFederation');
-
-const BG_IMAGES_DIRNAME = 'bgimages';
 const { setupWebpackDotenvFilesForEnv } = require('./dotenv');
-
 const { name } = require('../package.json');
 
+const BG_IMAGES_DIRNAME = 'bgimages';
 const SRC_DIR = process.env._SRC_DIR;
 const DIST_DIR = process.env._DIST_DIR;
 const COMMON_DIR = process.env._COMMON_DIR;
@@ -145,6 +183,7 @@ module.exports = (env) => ({
     path: DIST_DIR,
     publicPath: 'auto',
     uniqueName: name,
+    hashFunction: 'sha256', // Use FIPS-compliant hash function
   },
   plugins: [
     ...moduleFederationPlugins,
