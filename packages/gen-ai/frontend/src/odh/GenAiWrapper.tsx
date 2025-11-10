@@ -3,6 +3,7 @@ import { ModularArchConfig, DeploymentMode, ModularArchContextProvider } from 'm
 import { AppRoutes } from '~/app/AppRoutes';
 import { URL_PREFIX } from '~/app/utilities/const';
 import { UserContextProvider } from '~/app/context/UserContext';
+import { PluginStoreContextProvider } from './PluginStoreContextProvider';
 
 const modularArchConfig: ModularArchConfig = {
   deploymentMode: DeploymentMode.Federated,
@@ -12,9 +13,11 @@ const modularArchConfig: ModularArchConfig = {
 
 const GenAiWrapper: React.FC = () => (
   <ModularArchContextProvider config={modularArchConfig}>
-    <UserContextProvider>
-      <AppRoutes />
-    </UserContextProvider>
+    <PluginStoreContextProvider>
+      <UserContextProvider>
+        <AppRoutes />
+      </UserContextProvider>
+    </PluginStoreContextProvider>
   </ModularArchContextProvider>
 );
 
