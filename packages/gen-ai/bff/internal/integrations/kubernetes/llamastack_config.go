@@ -109,6 +109,7 @@ func NewDefaultLlamaStackConfig() *LlamaStackConfig {
 				NewProvider("meta-reference-files", "inline::localfs", map[string]interface{}{
 					"storage_dir": "/opt/app-root/src/.llama/distributions/rh/files",
 					"metadata_store": map[string]interface{}{
+						"type":       "backend",
 						"table_name": "files_metadata",
 						"backend":    "sql_default",
 					},
