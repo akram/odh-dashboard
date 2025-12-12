@@ -411,9 +411,9 @@ providers:
     config:
       storage_dir: /opt/app-root/src/.llama/distributions/rh/files
       metadata_store:
-        type: backend
+        type: sqlite
+        db_path: /opt/app-root/src/.llama/distributions/rh/sql_store.db
         table_name: files_metadata
-        backend: sql_default
   datasetio:
   - provider_id: huggingface
     provider_type: remote::huggingface
